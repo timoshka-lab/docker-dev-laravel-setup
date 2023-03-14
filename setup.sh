@@ -19,10 +19,10 @@ function report_success_message() {
 function validate_env() {
   load_env
 
-  required=(PHP_VERSION APP_URL APP_EMAIL MYSQL_VERSION MYSQL_USER MYSQL_PASSWORD MYSQL_ROOT_PASSWORD MYSQL_DATABASE NGINX_VERSION NGINX_SERVER_NAME)
+  required=(PHP_VERSION APP_URL APP_EMAIL MYSQL_VERSION MYSQL_USER MYSQL_PASSWORD MYSQL_ROOT_PASSWORD MYSQL_DATABASE NGINX_VERSION NGINX_SERVER_NAME COMPOSE_PROJECT_NAME)
 
   for var in "${required[@]}"; do
-    if [ -z "${!var}" ]; then
+    if [ -z "${!var-}" ]; then
       report_error "$var is required environment variable"
       return 1
     fi
