@@ -18,6 +18,8 @@ function report_success_message() {
 }
 
 function validate_env() {
+  load_env
+
   required=(PHP_VERSION APP_URL APP_EMAIL MYSQL_VERSION MYSQL_USER MYSQL_PASSWORD MYSQL_ROOT_PASSWORD MYSQL_DATABASE NGINX_VERSION NGINX_SERVER_NAME)
 
   for var in "${required[@]}"; do
@@ -62,17 +64,9 @@ function validate_env() {
 
 function validate_env_input() {
   read -p "Edit the '.env' file, and press enter key to continue:"
-  load_env
 
   if ! validate_env; then
     validate_env_input
-  fi
-}
-
-function validate_working_dir() {
-  if [ "$(ls -A | wc -l)" -gt 1 ]; then
-     echo "Error: working directory is not empty." >&2
-     exit 1
   fi
 }
 
@@ -100,15 +94,36 @@ function provision_docker_environment() {
 }
 
 function main() {
-  validate_working_dir
   validate_dependencies
 
   echo "Starting auto setup..."
 
-  init_project
-  validate_env_input
+  if [ -n "$(ls "$PWD")" ]; then
+    echo "Detecting docker environment in current directory..."
+
+    if [ -f "$PWD/.kit_version" ]; then
+      echo "Docker environment was detected with version: $(cat "$PWD/.kit_version")"
+
+      echo "Validating environment variables..."
+      if ! validate_env; then
+        validate_env_input
+      fi
+    else
+      report_error "Error: working directory is not empty and can not detect docker environment version."
+      exit 1
+    fi
+  else
+    echo "Initializing docker environment..."
+    init_project
+
+    echo "Validating environment variables..."
+    validate_env_input
+  fi
+
+  echo "Provisioning docker environment..."
   provision_docker_environment
 
+  echo "Detecting ssl certificate..."
   if [ "$NGINX_ENABLE_SSL" = true ]; then
     if [ -x "$(command -v security)" ]; then
       echo "Installing ssl certificate into keychain..."
