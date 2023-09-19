@@ -88,6 +88,12 @@ function init_project() {
 
 function provision_docker_environment() {
   docker compose build
+
+  if ! docker network inspect laravel-shared > /dev/null 2>&1; then
+    echo "Creating docker network 'laravel-shared'..."
+    docker network create laravel-shared
+  fi
+
   docker compose up -d
   docker compose exec app /setup.sh
 }
